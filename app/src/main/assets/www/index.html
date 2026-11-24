@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Limpiador</title>
+<style>
+:root{
+  --bg:#0E1114; --panel:#161B20; --panel2:#1D242B; --line:#28313A;
+  --text:#E8EEF2; --muted:#8B98A5; --accent:#2FD39B; --accent-ink:#06281C;
+  --warn:#FFB547; --danger:#FF5D5D; --info:#5CB8FF;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:76px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+h1{font-size:22px;margin:0}
+h2{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 4px 10px}
+.wrap{padding:18px 14px 8px;max-width:720px;margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sub{color:var(--muted);font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.danger{background:var(--danger);color:#fff;border-color:transparent}
+.btn.block{width:100%}
+.btn.sm{padding:8px 12px;font-size:13px;border-radius:10px}
+.btn:disabled{opacity:.45}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.right{text-align:right}
+.mono{font-variant-numeric:tabular-nums}
+
+/* Almacenamiento */
+.meter{height:12px;border-radius:99px;background:var(--panel2);overflow:hidden;margin:12px 0 8px}
+.meter>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.meter.full>i{background:var(--danger)}
+.big{font-size:28px;font-weight:700}
+
+/* Tarjetas de categoría */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px;text-align:left;display:flex;flex-direction:column;gap:2px;min-height:86px}
+.cat .ic{font-size:20px;margin-bottom:4px}
+.cat b{font-size:15px}
+.cat .sz{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.cat .n{color:var(--muted);font-size:12px}
+.cat.zero{opacity:.45}
+
+/* Progreso */
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s 0.8s linear infinite;flex:none}
+@keyframes s{to{transform:rotate(360deg)}}
+.ellipsis{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Pantalla de lista */
+.screen{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;flex-direction:column}
+.screen.on{display:flex}
+.bar{display:flex;align-items:center;gap:8px;padding:12px 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+.bar .back{font-size:22px;padding:4px 10px}
+.tools{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px}
+.list{flex:1;overflow:auto;padding:6px 10px 110px}
+.item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;border:1px solid transparent}
+.item.sel{background:#14302A;border-color:#1F5A48}
+.chk{width:22px;height:22px;border-radius:7px;border:2px solid var(--muted);flex:none;display:grid;place-items:center;font-size:14px;color:var(--accent-ink)}
+.sel .chk{background:var(--accent);border-color:var(--accent)}
+.sel .chk::after{content:"✓";font-weight:800}
+.th{width:52px;height:52px;border-radius:10px;background:var(--panel2);flex:none;display:grid;place-items:center;font-size:22px;overflow:hidden}
+.th img{width:100%;height:100%;object-fit:cover}
+.name{font-weight:600}
+.meta{color:var(--muted);font-size:12px}
+.ver{padding:8px;font-size:18px;color:var(--muted)}
+.group{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:6px;margin:8px 0}
+.keep{font-size:11px;color:var(--accent);font-weight:700}
+.more{display:block;margin:12px auto}
+
+/* Barra de acción */
+.action{position:fixed;left:0;right:0;bottom:0;padding:12px;background:var(--panel);border-top:1px solid var(--line);display:none;gap:8px;align-items:center;z-index:25}
+.action.on{display:flex}
+
+/* Navegación inferior */
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--panel);border-top:1px solid var(--line);z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font-size:12px}
+nav button span{font-size:20px}
+nav button.on{color:var(--accent)}
+.tab{display:none}
+.tab.on{display:block}
+
+/* Apps y seguridad */
+.app{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.app:last-child{border-bottom:0}
+.app img{width:42px;height:42px;border-radius:10px;background:var(--panel2);flex:none}
+.chips{display:flex;gap:8px;overflow:auto;padding-bottom:4px}
+.chip{padding:7px 12px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);white-space:nowrap;font-size:13px}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase}
+.badge.alto{background:var(--danger);color:#fff}
+.badge.medio{background:var(--warn);color:#2a1a00}
+.badge.bajo{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+ul.reasons{margin:6px 0 8px;padding-left:18px;color:var(--muted);font-size:13px}
+.note{font-size:13px;color:var(--muted)}
+.warn{border-color:#5a4416;background:#231C0E}
+.ok{color:var(--accent)}
+
+/* Modal y avisos */
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;justify-content:center;z-index:40}
+.modal.on{display:flex}
+.sheet{background:var(--panel);border-radius:18px 18px 0 0;padding:20px 16px 18px;width:100%;max-width:720px;border-top:1px solid var(--line)}
+.sheet h3{margin:0 0 6px;font-size:18px}
+.sheet .btns{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+.toast.on{opacity:.92}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+</style>
+</head>
+<body>
+
+<!-- ============ INICIO ============ -->
+<section class="tab on" id="t-inicio"><div class="wrap">
+  <div class="top"><h1>Limpiador</h1><span class="sub" id="ver"></span></div>
+
+  <div class="card" id="storage">
+    <div class="sub">Almacenamiento interno</div>
+    <div class="row" style="align-items:baseline;gap:8px;margin-top:4px">
+      <span class="big mono" id="st-free">—</span><span class="sub">libres</span>
+    </div>
+    <div class="meter" id="st-meter"><i style="width:0"></i></div>
+    <div class="sub mono" id="st-line"></div>
+    <div class="note" id="st-warn" style="display:none;margin-top:8px;color:var(--warn)">
+      El almacenamiento está casi lleno. Android trabaja más lento y puede fallar al actualizar apps cuando queda poco espacio: liberar espacio aquí sí se nota.
+    </div>
+  </div>
+
+  <div class="card warn" id="perm-files" style="display:none">
+    <b>Permiso necesario: acceso a todos los archivos</b>
+    <p class="note">Para encontrar videos, audios, descargas y duplicados, Android exige que usted active el permiso "Acceso a todos los archivos" para Limpiador. Nada sale del teléfono: la app no tiene permiso de internet.</p>
+    <button class="btn primary block" onclick="Limpiador.pedirArchivos()">Activar permiso</button>
+  </div>
+
+  <div class="card" id="scan-box">
+    <div id="scan-idle">
+      <button class="btn primary block" id="btn-scan" onclick="scan()">🔍 Analizar el teléfono</button>
+      <div class="note" id="scan-when" style="margin-top:8px;text-align:center"></div>
+    </div>
+    <div id="scan-run" style="display:none">
+      <div class="row"><div class="spin"></div><b class="grow" id="scan-title">Analizando…</b>
+        <button class="btn sm" onclick="Limpiador.cancelarAnalisis()">Cancelar</button></div>
+      <div class="sub mono" id="scan-count" style="margin-top:8px"></div>
+      <div class="sub ellipsis" id="scan-dir"></div>
+    </div>
+  </div>
+
+  <div id="results" style="display:none">
+    <h2>Recomendado revisar</h2>
+    <div class="grid" id="g-rec"></div>
+    <h2>Por tipo de archivo</h2>
+    <div class="grid" id="g-tipo"></div>
+  </div>
+
+  <h2>Caché de las apps</h2>
+  <div class="card">
+    <p class="note" style="margin-top:0">La caché son datos temporales que cada app guarda para cargar más rápido; se vuelven a crear con el uso. Borrarla libera espacio sin perder sus sesiones ni sus datos.</p>
+    <button class="btn block" id="btn-cache" onclick="clearCache()">🧹 Borrar caché de todas las apps</button>
+    <div class="note" id="cache-note" style="margin-top:8px"></div>
+  </div>
+</div></section>
+
+<!-- ============ APPS ============ -->
+<section class="tab" id="t-apps"><div class="wrap">
+  <div class="top"><h1>Apps</h1><button class="btn sm" onclick="loadApps(true)">Actualizar</button></div>
+  <div class="card warn" id="perm-usage" style="display:none">
+    <b>Permiso necesario: acceso a datos de uso</b>
+    <p class="note">Para saber qué apps no usa hace tiempo y cuánto espacio ocupa cada una, active "Acceso a datos de uso" (también llamado "Acceso al uso") para Limpiador.</p>
+    <button class="btn primary block" onclick="Limpiador.pedirUso()">Activar permiso</button>
+  </div>
+  <div class="chips" id="app-filters">
+    <button class="chip on" data-f="90">Sin uso +90 días</button>
+    <button class="chip" data-f="30">Sin uso +30 días</button>
+    <button class="chip" data-f="cache">Más caché</button>
+    <button class="chip" data-f="all">Todas</button>
+  </div>
+  <p class="note" id="apps-sum"></p>
+  <div class="card" id="apps-list"><div class="empty">Cargando…</div></div>
+  <p class="note">Desinstalar siempre muestra la confirmación de Android; Limpiador no puede desinstalar nada sin que usted lo apruebe. "Info" abre los ajustes de la app, donde también puede tocar <b>Almacenamiento → Borrar caché</b>.</p>
+  <p class="note">"Sin uso registrado" significa que la app no aparece en el historial de uso que guarda Android, que tiene un límite de tiempo.</p>
+</div></section>
+
+<!-- ============ SEGURIDAD ============ -->
+<section class="tab" id="t-seg"><div class="wrap">
+  <div class="top"><h1>Seguridad</h1></div>
+  <div class="card">
+    <p class="note" style="margin-top:0"><b style="color:var(--text)">Esto no es un antivirus.</b> Limpiador revisa señales que suele tener el malware en Android: apps instaladas por fuera de una tienda oficial, apps con Accesibilidad activa, administradoras del dispositivo, que leen notificaciones o SMS, o que se muestran encima de otras apps. Una señal no significa que la app sea maligna (por ejemplo, un gestor de contraseñas usa Accesibilidad): revise si reconoce la app y si la instaló usted.</p>
+    <button class="btn primary block" onclick="loadSec()">🛡️ Revisar apps</button>
+  </div>
+  <div id="sec-list"></div>
+  <div class="card" id="sec-apk" style="display:none"></div>
+  <div class="card">
+    <b>Análisis de virus con Google Play Protect</b>
+    <p class="note">Play Protect ya viene en su teléfono y sí tiene base de datos de malware. Para analizar: abra <b>Play Store</b> → toque su foto de perfil → <b>Play Protect</b> → <b>Analizar</b>.</p>
+  </div>
+</div></section>
+
+<!-- ============ PAPELERA ============ -->
+<section class="tab" id="t-pap"><div class="wrap">
+  <div class="top"><h1>Papelera</h1></div>
+  <div class="card">
+    <div class="row"><div class="grow"><div class="big mono" id="pap-total">—</div><div class="sub" id="pap-n"></div></div>
+      <button class="btn danger sm" onclick="emptyTrash()">Vaciar todo</button></div>
+    <p class="note" id="pap-note" style="margin-bottom:0"></p>
+  </div>
+  <div id="pap-list"></div>
+</div></section>
+
+<!-- ============ PANTALLA DE LISTA (categoría) ============ -->
+<div class="screen" id="screen">
+  <div class="bar"><button class="back" onclick="closeScreen()">←</button>
+    <div class="grow"><b id="sc-title"></b><div class="sub mono" id="sc-sub"></div></div></div>
+  <div class="tools" id="sc-tools">
+    <select id="sc-sort" onchange="renderList(true)">
+      <option value="tam">Más pesados primero</option>
+      <option value="viejo">Más antiguos primero</option>
+      <option value="nuevo">Más recientes primero</option>
+      <option value="nombre">Por nombre</option>
+    </select>
+    <button class="btn sm" id="sc-all" onclick="toggleAll()">Seleccionar todo</button>
+  </div>
+  <div class="list" id="sc-list"></div>
+</div>
+
+<div class="action" id="action">
+  <div class="grow"><b id="ac-n"></b><div class="sub mono" id="ac-b"></div></div>
+  <button class="btn sm" id="ac-trash" onclick="confirmDelete('papelera')">A papelera</button>
+  <button class="btn danger sm" id="ac-del" onclick="confirmDelete('definitivo')">Eliminar</button>
+</div>
+
+<nav id="nav">
+  <button class="on" data-t="inicio"><span>🏠</span>Inicio</button>
+  <button data-t="apps"><span>📱</span>Apps</button>
+  <button data-t="seg"><span>🛡️</span>Seguridad</button>
+  <button data-t="pap"><span>🗑️</span>Papelera</button>
+</nav>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const A = window.Limpiador;
+const $ = s => document.querySelector(s);
+const J = s => { try { return JSON.parse(s); } catch (e) { return null; } };
+const nf1 = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+const nf0 = new Intl.NumberFormat("es-CO");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function bytes(b) {
+  if (!b || b < 1) return "0 B";
+  const u = ["B", "KB", "MB", "GB", "TB"]; let i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return (i < 2 ? nf0.format(Math.round(b)) : nf1.format(b)) + " " + u[i];
+}
+function fecha(ms) {
+  if (!ms) return "";
+  return new Date(ms).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
+}
+function hace(ms) {
+  if (!ms) return "Sin uso registrado";
+  const d = Math.floor((Date.now() - ms) / 86400000);
+  if (d < 1) return "Usada hoy";
+  if (d === 1) return "Usada ayer";
+  if (d < 30) return "Usada hace " + d + " días";
+  const m = Math.floor(d / 30);
+  if (m < 12) return "Usada hace " + m + (m === 1 ? " mes" : " meses");
+  const y = Math.floor(d / 365);
+  return "Usada hace " + y + (y === 1 ? " año" : " años");
+}
+function shortDir(p) {
+  return p.replace(/^\/storage\/emulated\/0\/?/, "Interno/").replace(/^\/storage\/([^/]+)\/?/, "SD/");
+}
+let toastT;
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 3200); }
+window.__aviso = toast;
+function later(fn) { setTimeout(fn, 30); }   // deja pintar el "cargando" antes de llamadas pesadas
+
+/* ---------------- Estado general ---------------- */
+let E = {}, S = null;
+function refreshEstado() {
+  E = J(A.estado()) || {};
+  $("#ver").textContent = "Android " + (E.android || "");
+  $("#perm-files").style.display = E.archivos ? "none" : "block";
+  $("#btn-scan").disabled = !E.archivos;
+  $("#perm-usage").style.display = E.uso ? "none" : "block";
+  if (!E.cacheGlobal) {
+    $("#btn-cache").disabled = true;
+    $("#cache-note").textContent = "Su versión de Android no permite borrar la caché de todas las apps a la vez. Use la pestaña Apps → \"Más caché\" → Info → Almacenamiento → Borrar caché.";
+  } else if (!E.archivos) {
+    $("#btn-cache").disabled = true;
+    $("#cache-note").textContent = "Requiere el permiso de acceso a todos los archivos.";
+  } else {
+    $("#btn-cache").disabled = false;
+    $("#cache-note").textContent = "Android le mostrará su propio diálogo para confirmar. Borra la caché externa de las apps; la caché interna de cada app se borra desde Apps → Info.";
+  }
+}
+let lastFree = 0;
+function refreshStorage() {
+  const s = J(A.almacenamiento()); if (!s || !s.total) return;
+  const used = s.total - s.libre, pct = used / s.total * 100;
+  lastFree = s.libre;
+  $("#st-free").textContent = bytes(s.libre);
+  $("#st-line").textContent = "Usado " + bytes(used) + " de " + bytes(s.total) + " (" + nf0.format(Math.round(pct)) + " %)";
+  $("#st-meter i").style.width = pct.toFixed(1) + "%";
+  $("#st-meter").classList.toggle("full", pct >= 90);
+  $("#st-warn").style.display = pct >= 90 ? "block" : "none";
+}
+window.__volvio = () => {
+  const hadUsage = E.uso;
+  refreshEstado(); refreshStorage();
+  if (!hadUsage && E.uso && current === "apps") loadApps(true);
+  if (current === "pap") loadTrash();
+};
+
+/* ---------------- Análisis ---------------- */
+function scan() {
+  if (!A.analizar()) { toast("Active primero el permiso de archivos"); return; }
+  $("#scan-idle").style.display = "none"; $("#scan-run").style.display = "block";
+  $("#scan-title").textContent = "Buscando archivos…"; $("#scan-count").textContent = ""; $("#scan-dir").textContent = "";
+}
+window.__progreso = p => {
+  $("#scan-idle").style.display = "none"; $("#scan-run").style.display = "block";
+  if (p.fase === "archivos") {
+    $("#scan-title").textContent = "Buscando archivos…";
+    $("#scan-count").textContent = nf0.format(p.archivos) + " archivos · " + bytes(p.bytes);
+    $("#scan-dir").textContent = p.carpeta || "";
+  } else {
+    $("#scan-title").textContent = "Comparando posibles duplicados…";
+    $("#scan-count").textContent = nf0.format(p.hechos) + " de " + nf0.format(p.total);
+    $("#scan-dir").textContent = "";
+  }
+};
+window.__analisisListo = s => { S = s; scanEnded(); renderSummary(); toast("Análisis terminado"); };
+window.__analisisError = m => { scanEnded(); toast("Error en el análisis: " + m); };
+function scanEnded() {
+  $("#scan-idle").style.display = "block"; $("#scan-run").style.display = "none";
+  $("#btn-scan").textContent = "🔍 Volver a analizar";
+}
+
+const CATS = {
+  grande:    ["🐘", "Archivos grandes", "De más de 100 MB"],
+  duplicados:["👯", "Duplicados", "Copias idénticas"],
+  descargas: ["⬇️", "Descargas", "Carpeta Download"],
+  whatsapp:  ["💬", "WhatsApp", "Fotos, videos, audios"],
+  enviados:  ["📤", "WhatsApp enviados", "Copias de lo que envió"],
+  telegram:  ["✈️", "Telegram", "Archivos recibidos"],
+  capturas:  ["📸", "Capturas de pantalla", ""],
+  antiguo:   ["🕰️", "Antiguos", "Sin cambios hace +1 año"],
+  temporal:  ["🧾", "Temporales", "Miniaturas, registros, .tmp"],
+  vacias:    ["📁", "Carpetas vacías", ""],
+  video:     ["🎬", "Videos", ""],
+  audio:     ["🎵", "Audios", "Música, notas de voz"],
+  imagen:    ["🖼️", "Imágenes", ""],
+  documento: ["📄", "Documentos", ""],
+  apk:       ["📦", "Instaladores APK", "Ya instalados, se pueden borrar"],
+  comprimido:["🗜️", "Comprimidos", "ZIP, RAR…"],
+  otro:      ["❔", "Otros", ""]
+};
+const REC = ["grande", "duplicados", "descargas", "whatsapp", "enviados", "telegram", "capturas", "antiguo", "temporal", "vacias"];
+const TIPO = ["video", "audio", "imagen", "documento", "apk", "comprimido", "otro"];
+const ICON = { video: "🎬", audio: "🎵", imagen: "🖼️", documento: "📄", apk: "📦", comprimido: "🗜️", temporal: "🧾", otro: "❔" };
+
+function catCard(k) {
+  const c = CATS[k], v = S[k] || { n: 0, bytes: 0 };
+  const n = k === "vacias" ? v.n + " carpetas" : k === "duplicados" ? v.n + " copias en " + (v.grupos || 0) + " grupos" : nf0.format(v.n) + " archivos";
+  return `<button class="cat ${v.n ? "" : "zero"}" onclick="openCat('${k}')" ${v.n ? "" : "disabled"}>
+    <span class="ic">${c[0]}</span><b>${c[1]}</b>
+    <span class="sz">${k === "vacias" ? "" : bytes(v.bytes)}</span><span class="n">${n}</span></button>`;
+}
+function renderSummary() {
+  if (!S) return;
+  $("#results").style.display = "block";
+  const rec = REC.slice().sort((a, b) => (S[b] ? S[b].bytes : 0) - (S[a] ? S[a].bytes : 0));
+  $("#g-rec").innerHTML = rec.map(catCard).join("");
+  $("#g-tipo").innerHTML = TIPO.map(catCard).join("");
+  $("#scan-when").textContent = S.fechaAnalisis ? "Último análisis: " + new Date(S.fechaAnalisis).toLocaleString("es-CO") + " · " + nf0.format(S.total.n) + " archivos (" + bytes(S.total.bytes) + ")" : "";
+  const apk = S.apk || { n: 0 };
+  const box = $("#sec-apk");
+  if (apk.n) {
+    box.style.display = "block";
+    box.innerHTML = `<b>📦 ${apk.n} instaladores APK guardados (${bytes(apk.bytes)})</b>
+      <p class="note">Los APK descargados de internet son la vía más común para que entre malware. Si ya instaló la app, el archivo sobra.</p>
+      <button class="btn sm" onclick="openCat('apk')">Revisar APK</button>`;
+  } else box.style.display = "none";
+}
+
+/* ---------------- Pantalla de categoría ---------------- */
+let cat = null, items = [], groups = null, sel = new Map(), shown = 0;
+const PAGE = 120;
+
+function openCat(k) {
+  cat = k; sel.clear(); groups = null; items = [];
+  $("#sc-title").textContent = CATS[k][1];
+  $("#sc-sub").textContent = "Cargando…";
+  $("#sc-list").innerHTML = '<div class="empty"><div class="spin" style="margin:0 auto"></div></div>';
+  $("#screen").classList.add("on");
+  $("#sc-tools").style.display = "flex";
+  $("#sc-sort").style.display = k === "duplicados" || k === "vacias" ? "none" : "";
+  $("#sc-all").textContent = k === "duplicados" ? "Seleccionar todas las copias" : "Seleccionar todo";
+  $("#ac-trash").style.display = k === "vacias" ? "none" : "";
+  $("#ac-del").textContent = k === "vacias" ? "Eliminar carpetas" : "Eliminar";
+  later(() => {
+    if (k === "duplicados") { groups = J(A.duplicados()) || []; items = groups.flatMap(g => g.items); }
+    else if (k === "vacias") { items = (J(A.carpetasVacias()) || []).map(p => ({ id: p, nombre: p.split("/").pop(), carpeta: p, tam: 0 })); }
+    else items = J(A.lista(k)) || [];
+    renderList(true);
+  });
+}
+function closeScreen() { $("#screen").classList.remove("on"); sel.clear(); updateAction(); }
+
+function sorted() {
+  const s = $("#sc-sort").value, a = items.slice();
+  if (s === "viejo") a.sort((x, y) => x.fecha - y.fecha);
+  else if (s === "nuevo") a.sort((x, y) => y.fecha - x.fecha);
+  else if (s === "nombre") a.sort((x, y) => x.nombre.localeCompare(y.nombre, "es"));
+  else a.sort((x, y) => y.tam - x.tam);
+  return a;
+}
+function itemHtml(it, keep) {
+  const isSel = sel.has(String(it.id));
+  let th;
+  if (cat === "vacias") th = "📁";
+  else if (it.tipo === "imagen" || it.tipo === "video" || it.tipo === "audio")
+    th = `<img loading="lazy" src="/miniatura/${it.id}" onerror="this.replaceWith(document.createTextNode('${ICON[it.tipo]}'))">`;
+  else th = ICON[it.tipo] || "❔";
+  const meta = cat === "vacias" ? esc(shortDir(it.carpeta))
+    : `${bytes(it.tam)} · ${fecha(it.fecha)}<br><span class="ellipsis" style="display:block">${esc(shortDir(it.carpeta))}</span>`;
+  return `<div class="item ${isSel ? "sel" : ""}" data-id="${esc(it.id)}">
+    <div class="chk"></div><div class="th">${th}</div>
+    <div class="grow"><div class="name ellipsis">${esc(it.nombre)}</div>
+    ${keep ? '<div class="keep">SUGERIDO CONSERVAR</div>' : ""}<div class="meta">${meta}</div></div>
+    ${cat === "vacias" ? "" : `<button class="ver" data-ver="${it.id}" aria-label="Ver">👁</button>`}</div>`;
+}
+function renderList(reset) {
+  const box = $("#sc-list");
+  const total = items.reduce((s, i) => s + (i.tam || 0), 0);
+  if (cat === "duplicados") {
+    const wasted = groups.reduce((s, g) => s + g.items.slice(1).reduce((t, i) => t + i.tam, 0), 0);
+    $("#sc-sub").textContent = groups.length + " grupos · " + bytes(wasted) + " en copias";
+    box.innerHTML = groups.length ? groups.map(g =>
+      `<div class="group">${g.items.map((it, i) => itemHtml(it, i === 0)).join("")}</div>`).join("")
+      : '<div class="empty">No hay duplicados.</div>';
+    updateAction(); return;
+  }
+  $("#sc-sub").textContent = cat === "vacias" ? items.length + " carpetas" : nf0.format(items.length) + " archivos · " + bytes(total);
+  if (reset) { shown = 0; box.innerHTML = ""; }
+  if (!items.length) { box.innerHTML = '<div class="empty">No hay nada aquí. 🎉</div>'; updateAction(); return; }
+  const a = sorted(), next = a.slice(shown, shown + PAGE);
+  const old = box.querySelector(".more"); if (old) old.remove();
+  box.insertAdjacentHTML("beforeend", next.map(it => itemHtml(it, false)).join(""));
+  shown += next.length;
+  if (shown < a.length) box.insertAdjacentHTML("beforeend", `<button class="btn more" onclick="renderList(false)">Mostrar más (${nf0.format(a.length - shown)})</button>`);
+  updateAction();
+}
+$("#sc-list").addEventListener("click", ev => {
+  const v = ev.target.closest("[data-ver]");
+  if (v) { A.abrirArchivo(parseInt(v.dataset.ver, 10)); return; }
+  const row = ev.target.closest(".item"); if (!row) return;
+  const id = row.dataset.id;
+  if (sel.has(id)) sel.delete(id);
+  else { const it = items.find(i => String(i.id) === id); if (it) sel.set(id, it.tam || 0); }
+  row.classList.toggle("sel", sel.has(id));
+  updateAction();
+});
+function toggleAll() {
+  if (cat === "duplicados") {
+    sel.clear();
+    groups.forEach(g => g.items.slice(1).forEach(it => sel.set(String(it.id), it.tam)));
+  } else if (sel.size === items.length) sel.clear();
+  else items.forEach(it => sel.set(String(it.id), it.tam || 0));
+  document.querySelectorAll("#sc-list .item").forEach(r => r.classList.toggle("sel", sel.has(r.dataset.id)));
+  updateAction();
+}
+function updateAction() {
+  const on = $("#screen").classList.contains("on") && sel.size > 0;
+  $("#action").classList.toggle("on", on);
+  if (!on) return;
+  let b = 0; sel.forEach(v => b += v);
+  $("#ac-n").textContent = nf0.format(sel.size) + (cat === "vacias" ? " carpetas" : " seleccionados");
+  $("#ac-b").textContent = cat === "vacias" ? "" : bytes(b);
+  $("#sc-all").textContent = cat === "duplicados" ? "Seleccionar todas las copias" : (sel.size === items.length ? "Quitar selección" : "Seleccionar todo");
+}
+
+function confirmDelete(modo) {
+  let b = 0; sel.forEach(v => b += v);
+  const n = nf0.format(sel.size);
+  if (cat === "vacias") {
+    openModal(`<h3>¿Eliminar ${n} carpetas vacías?</h3><p class="note">Están vacías; no se pierde ningún archivo.</p>
+      <div class="btns"><button class="btn danger" onclick="doDelete('carpetas')">Eliminar</button><button class="btn" onclick="closeModal()">Cancelar</button></div>`);
+    return;
+  }
+  // En duplicados, avisar si en algún grupo se van a borrar TODAS las copias
+  let warnAll = "";
+  if (cat === "duplicados" && groups.some(g => g.items.every(i => sel.has(String(i.id)))))
+    warnAll = `<p class="note" style="color:var(--warn)">⚠️ En al menos un grupo seleccionó todas las copias: ese archivo desaparecería por completo.</p>`;
+  const txt = modo === "papelera"
+    ? `<h3>¿Mover ${n} archivos a la papelera?</h3><p class="note">Ocupan ${bytes(b)}. Podrá restaurarlos durante 7 días; el espacio se libera al vaciar la papelera (o solo, a los 7 días).</p>`
+    : `<h3>¿Eliminar ${n} archivos definitivamente?</h3><p class="note">Se liberan ${bytes(b)} de inmediato. <b style="color:var(--danger)">No se pueden recuperar.</b></p>`;
+  openModal(txt + warnAll + `<div class="btns">
+    <button class="btn ${modo === "papelera" ? "primary" : "danger"}" onclick="doDelete('${modo}')">${modo === "papelera" ? "Mover a la papelera" : "Eliminar definitivamente"}</button>
+    <button class="btn" onclick="closeModal()">Cancelar</button></div>`);
+}
+function doDelete(modo) {
+  openModal(`<div class="row"><div class="spin"></div><b>Eliminando…</b></div>`);
+  later(() => {
+    const ids = [...sel.keys()];
+    let r;
+    if (modo === "carpetas") {
+      r = J(A.eliminarCarpetas(JSON.stringify(ids))) || { ok: 0 };
+      toast(r.ok + " carpetas eliminadas");
+    } else {
+      r = J(A.eliminar(JSON.stringify(ids.map(Number)), modo)) || { ok: 0, fallos: 0, bytes: 0 };
+      let m = modo === "papelera" ? nf0.format(r.ok) + " archivos a la papelera (" + bytes(r.bytes) + ")"
+                                  : nf0.format(r.ok) + " archivos eliminados · " + bytes(r.bytes) + " liberados";
+      if (r.fallos) m += " · " + r.fallos + " no se pudieron " + (modo === "papelera" ? "mover (pruebe Eliminar)" : "borrar");
+      toast(m);
+    }
+    closeModal(); sel.clear();
+    S = J(A.resumen()); renderSummary(); refreshStorage();
+    openCat(cat);
+  });
+}
+
+/* ---------------- Caché ---------------- */
+let freeBeforeCache = 0;
+function clearCache() {
+  refreshStorage(); freeBeforeCache = lastFree;
+  if (!A.limpiarCacheTodas()) toast("No disponible en este teléfono");
+}
+window.__cacheResultado = code => {
+  refreshStorage();
+  const freed = lastFree - freeBeforeCache;
+  if (code === -99) toast("Su teléfono no tiene el diálogo de Android para borrar la caché");
+  else if (code === -1) toast("Caché borrada" + (freed > 0 ? " · " + bytes(freed) + " liberados" : ""));
+  else toast(freed > 0 ? bytes(freed) + " liberados" : "No se borró la caché");
+};
+
+/* ---------------- Apps ---------------- */
+let APPS = null, appFilter = "90";
+function loadApps(force) {
+  if (APPS && !force) { renderApps(); return; }
+  $("#apps-list").innerHTML = '<div class="empty"><div class="spin" style="margin:0 auto 8px"></div>Leyendo apps…</div>';
+  later(() => { APPS = J(A.apps()) || []; renderApps(); });
+}
+window.__appsCambiaron = () => { loadApps(true); refreshStorage(); };
+document.querySelectorAll("#app-filters .chip").forEach(c => c.onclick = () => {
+  document.querySelectorAll("#app-filters .chip").forEach(x => x.classList.toggle("on", x === c));
+  appFilter = c.dataset.f; renderApps();
+});
+function renderApps() {
+  if (!APPS) return;
+  const now = Date.now(), day = 86400000;
+  let list = APPS.slice();
+  const idle = days => a => {
+    const ref = a.ultimoUso || a.instalada;            // una app recién instalada no cuenta como "sin uso"
+    return now - ref > days * day;
+  };
+  if (appFilter === "90") list = list.filter(idle(90));
+  else if (appFilter === "30") list = list.filter(idle(30));
+  const size = a => (a.app || 0) + (a.datos || 0);
+  if (appFilter === "cache") list.sort((a, b) => (b.cache || 0) - (a.cache || 0));
+  else list.sort((a, b) => size(b) - size(a));
+  const tot = list.reduce((s, a) => s + (appFilter === "cache" ? (a.cache || 0) : size(a)), 0);
+  $("#apps-sum").textContent = list.length + " apps" + (E.uso ? " · " + bytes(tot) + (appFilter === "cache" ? " de caché" : " en total") : "");
+  if (!list.length) { $("#apps-list").innerHTML = '<div class="empty">No hay apps en este filtro.</div>'; return; }
+  $("#apps-list").innerHTML = list.map(a => `<div class="app">
+    <img src="/icono/${esc(a.pkg)}" alt="">
+    <div class="grow"><div class="name ellipsis">${esc(a.nombre)}</div>
+      <div class="meta">${hace(a.ultimoUso)}${E.uso ? " · " + bytes(size(a)) + (a.cache ? " · caché " + bytes(a.cache) : "") : ""}</div>
+      <div class="meta">${esc(a.origen)}</div></div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="btn sm danger" onclick="Limpiador.desinstalar('${esc(a.pkg)}')">Desinstalar</button>
+      <button class="btn sm" onclick="Limpiador.infoApp('${esc(a.pkg)}')">Info</button></div></div>`).join("");
+}
+
+/* ---------------- Seguridad ---------------- */
+function loadSec() {
+  $("#sec-list").innerHTML = '<div class="card"><div class="row"><div class="spin"></div>Revisando apps…</div></div>';
+  later(() => {
+    const r = J(A.seguridad()) || [];
+    if (!r.length) { $("#sec-list").innerHTML = '<div class="card"><b class="ok">✓ No se encontraron apps con señales de riesgo.</b></div>'; return; }
+    $("#sec-list").innerHTML = r.map(a => `<div class="card">
+      <div class="row"><img src="/icono/${esc(a.pkg)}" style="width:38px;height:38px;border-radius:9px" alt="">
+        <div class="grow"><b class="ellipsis" style="display:block">${esc(a.nombre)}</b><div class="meta">${esc(a.origen)}</div></div>
+        <span class="badge ${a.nivel}">${a.nivel}</span></div>
+      <ul class="reasons">${a.motivos.map(m => "<li>" + esc(m) + "</li>").join("")}</ul>
+      <div class="row"><button class="btn sm danger" onclick="Limpiador.desinstalar('${esc(a.pkg)}')">Desinstalar</button>
+        <button class="btn sm" onclick="Limpiador.infoApp('${esc(a.pkg)}')">Ver permisos</button></div></div>`).join("");
+  });
+}
+
+/* ---------------- Papelera ---------------- */
+let PAP = null, papSel = new Set();
+function loadTrash() {
+  PAP = J(A.papelera()) || { items: [], bytes: 0, dias: 7 };
+  papSel.clear();
+  $("#pap-total").textContent = bytes(PAP.bytes);
+  $("#pap-n").textContent = PAP.items.length + " archivos";
+  $("#pap-note").textContent = "Lo que lleva más de " + PAP.dias + " días en la papelera se borra solo. Mientras esté aquí, sigue ocupando espacio.";
+  renderTrash();
+}
+function renderTrash() {
+  const box = $("#pap-list");
+  if (!PAP.items.length) { box.innerHTML = '<div class="empty">La papelera está vacía.</div>'; return; }
+  const items = PAP.items.slice().sort((a, b) => b.fecha - a.fecha);
+  box.innerHTML = `<div class="row" style="margin:6px 0 10px;gap:8px">
+      <button class="btn sm" onclick="trashAction('restaurar')" ${papSel.size ? "" : "disabled"}>Restaurar (${papSel.size})</button>
+      <button class="btn sm danger" onclick="trashAction('borrar')" ${papSel.size ? "" : "disabled"}>Borrar (${papSel.size})</button></div>
+    <div class="card" style="padding:6px">` + items.map(it => {
+      const name = it.original.split("/").pop();
+      return `<div class="item ${papSel.has(it.id) ? "sel" : ""}" data-pid="${esc(it.id)}"><div class="chk"></div>
+        <div class="grow"><div class="name ellipsis">${esc(name)}</div>
+        <div class="meta">${bytes(it.tam)} · enviado ${fecha(it.fecha)}<br><span class="ellipsis" style="display:block">${esc(shortDir(it.original.substring(0, it.original.lastIndexOf("/"))))}</span></div></div></div>`;
+    }).join("") + "</div>";
+}
+$("#pap-list").addEventListener("click", ev => {
+  const row = ev.target.closest("[data-pid]"); if (!row) return;
+  const id = row.dataset.pid;
+  papSel.has(id) ? papSel.delete(id) : papSel.add(id);
+  renderTrash();
+});
+function trashAction(kind) {
+  const ids = JSON.stringify([...papSel]);
+  if (kind === "restaurar") {
+    const r = J(A.restaurar(ids)) || { ok: 0 };
+    toast(r.ok + " archivos restaurados (vuelva a analizar para verlos en las listas)");
+    loadTrash();
+  } else {
+    openModal(`<h3>¿Borrar ${papSel.size} archivos definitivamente?</h3><p class="note">No se podrán recuperar.</p>
+      <div class="btns"><button class="btn danger" onclick="purge(${esc(JSON.stringify(ids))})">Borrar</button><button class="btn" onclick="closeModal()">Cancelar</button></div>`);
+  }
+}
+function emptyTrash() {
+  if (!PAP || !PAP.items.length) { toast("La papelera ya está vacía"); return; }
+  openModal(`<h3>¿Vaciar la papelera?</h3><p class="note">Se liberan ${bytes(PAP.bytes)}. Los archivos no se podrán recuperar.</p>
+    <div class="btns"><button class="btn danger" onclick="purge('')">Vaciar papelera</button><button class="btn" onclick="closeModal()">Cancelar</button></div>`);
+}
+function purge(ids) {
+  openModal(`<div class="row"><div class="spin"></div><b>Borrando…</b></div>`);
+  later(() => {
+    const r = J(A.vaciar(ids)) || { bytes: 0 };
+    closeModal(); toast(bytes(r.bytes) + " liberados"); loadTrash(); refreshStorage();
+  });
+}
+
+/* ---------------- Navegación, modal y botón atrás ---------------- */
+let current = "inicio";
+function showTab(t) {
+  current = t;
+  document.querySelectorAll(".tab").forEach(s => s.classList.toggle("on", s.id === "t-" + t));
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  window.scrollTo(0, 0);
+  if (t === "apps") loadApps(false);
+  if (t === "pap") loadTrash();
+  if (t === "inicio") refreshStorage();
+}
+document.querySelectorAll("#nav button").forEach(b => b.onclick = () => showTab(b.dataset.t));
+function openModal(html) { $("#sheet").innerHTML = html; $("#modal").classList.add("on"); }
+function closeModal() { $("#modal").classList.remove("on"); }
+window.__atras = () => {
+  if ($("#modal").classList.contains("on")) { closeModal(); return true; }
+  if ($("#screen").classList.contains("on")) { closeScreen(); return true; }
+  if (current !== "inicio") { showTab("inicio"); return true; }
+  return false;
+};
+
+/* ---------------- Arranque ---------------- */
+refreshEstado();
+refreshStorage();
+if (E.hayAnalisis) { S = J(A.resumen()); renderSummary(); scanEnded(); }
+if (E.analizando) { $("#scan-idle").style.display = "none"; $("#scan-run").style.display = "block"; }
+</script>
+</body>
+</html>

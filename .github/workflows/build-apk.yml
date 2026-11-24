@@ -1,0 +1,39 @@
+# Compila el APK automáticamente en GitHub (no necesita computador ni Android Studio).
+# Cada vez que se sube un cambio a main, el APK nuevo queda en:
+#   https://github.com/<usuario>/limpiador/releases/latest/download/Limpiador.apk
+name: Compilar APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compilar APK
+        run: gradle assembleDebug --no-daemon
+      - name: Renombrar APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk Limpiador.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Limpiador-apk
+          path: Limpiador.apk
+      - name: Publicar en Releases (enlace directo para el celular)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          gh release create "$TAG" Limpiador.apk \
+            --title "Limpiador (compilación ${{ github.run_number }})" \
+            --notes "APK compilado desde el commit ${{ github.sha }}. Requiere Android 10 o superior." \
+            --latest
