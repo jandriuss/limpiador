@@ -255,7 +255,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;"
 function bytes(b) {
   if (!b || b < 1) return "0 B";
   const u = ["B", "KB", "MB", "GB", "TB"]; let i = 0;
-  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  while (b >= 1000 && i < u.length - 1) { b /= 1000; i++; }   // base 1000, como los Ajustes de Android
   return (i < 2 ? nf0.format(Math.round(b)) : nf1.format(b)) + " " + u[i];
 }
 function fecha(ms) {
